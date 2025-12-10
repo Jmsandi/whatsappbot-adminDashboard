@@ -1,30 +1,78 @@
-# Admin dashboard build
+# WhatsApp Bot Admin Dashboard
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+A comprehensive management interface for the Geneline WhatsApp bridge, built with Next.js 16 and Supabase. This dashboard empowers administrators to monitor bot performance, manage escalations, and configure AI behavior in real-time.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/mohamedsandi99-8844s-projects/v0-admin-dashboard-build)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/fKkVQ0a0O3v)
+## Features
 
-## Overview
+### 📊 Real-time Analytics
+- **Dashboard Overview**: Visualize key metrics including user engagement, message volume, and active sessions.
+- **Bot Performance**: Monitor response times and intent accuracy.
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+### 👥 User & Interaction Management
+- **Message Logs**: View complete conversation histories with advanced filtering capabilities.
+- **Escalation Management**: Streamlined interface for handling cases that require human intervention.
+- **Contacts & Users**: Manage the user database and WhatsApp contact details.
 
-## Deployment
+### 🤖 Bot Configuration
+- **Bot Settings**: Configure system prompts, AI model parameters, and behavioral guidelines.
+- **Health Topics**: Manage the knowledge base and intended topics for the health bot.
+- **Training Data**: Tools for ingesting and managing data used to train the AI.
 
-Your project is live at:
+### 📢 Communication Tools
+- **Broadcast System**: Send targeted mass messages to user segments.
 
-**[https://vercel.com/mohamedsandi99-8844s-projects/v0-admin-dashboard-build](https://vercel.com/mohamedsandi99-8844s-projects/v0-admin-dashboard-build)**
+## Tech Stack
 
-## Build your app
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **UI Components**: [Shadcn/ui](https://ui.shadcn.com/), [Radix UI](https://www.radix-ui.com/)
+- **Database & Auth**: [Supabase](https://supabase.com/)
+- **Visualization**: [Recharts](https://recharts.org/)
 
-Continue building your app on:
+## Getting Started
 
-**[https://v0.app/chat/fKkVQ0a0O3v](https://v0.app/chat/fKkVQ0a0O3v)**
+### Prerequisites
+- Node.js (v18 or higher)
+- npm or pnpm
 
-## How It Works
+### Installation
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Jmsandi/whatsappbot-adminDashboard.git
+   cd whatsappbot-adminDashboard
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   pnpm install
+   ```
+
+3. **Environment Setup**
+   Create a `.env` file in the root directory and configure your Supabase credentials:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+4. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Project Structure
+
+- `app/dashboard`: Contains all dashboard route pages and layouts.
+- `components`: Reusable UI components (buttons, cards, dialogs, etc.).
+- `lib`: Utility functions, API clients, and Supabase configuration.
+- `public`: Static assets like images and icons.
+- `scripts`: Database migration and seed scripts.
+
+## License
+
+This project is private and proprietary.
