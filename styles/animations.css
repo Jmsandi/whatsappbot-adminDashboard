@@ -1,0 +1,185 @@
+/* 🎨 Enhanced Visual Effects for Admin Dashboard */
+
+/* Smooth Transitions */
+* {
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease,
+        box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* Button Hover Effects */
+button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px -2px oklch(from var(--primary) l c h / 0.15);
+}
+
+button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* Card Hover Effects */
+[class*="card"]:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 12px 32px -4px oklch(from var(--primary) l c h / 0.12),
+        0 4px 12px -2px oklch(from var(--primary) l c h / 0.08);
+    border-color: oklch(from var(--primary) l c h / 0.3);
+}
+
+/* Input Focus Glow */
+input:focus,
+textarea:focus,
+select:focus {
+    box-shadow:
+        0 0 0 3px oklch(from var(--ring) l c h / 0.15),
+        0 4px 12px 0 oklch(from var(--primary) l c h / 0.08);
+}
+
+/* Sidebar Animations */
+aside nav a {
+    transition: all 0.2s ease;
+}
+
+aside nav a:hover {
+    transform: translateX(4px);
+    background: oklch(from var(--sidebar-accent) l c h / 0.8);
+}
+
+/* Stat Cards Pulse Animation */
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        box-shadow:
+            0 4px 24px -1px oklch(from var(--primary) l c h / 0.08),
+            0 2px 8px -1px oklch(from var(--primary) l c h / 0.05);
+    }
+
+    50% {
+        box-shadow:
+            0 8px 32px -1px oklch(from var(--primary) l c h / 0.15),
+            0 4px 16px -1px oklch(from var(--primary) l c h / 0.1);
+    }
+}
+
+[class*="stats-card"] {
+    animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Loading Spinner */
+@keyframes spin-gradient {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner {
+    border: 3px solid transparent;
+    border-top-color: var(--primary);
+    border-right-color: var(--info);
+    animation: spin-gradient 1s linear infinite;
+}
+
+/* Chart Animations */
+[class*="recharts"] {
+    animation: fade-in-up 0.5s ease-out;
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Success/Error/Warning/Info Badges with new colors */
+.badge-success {
+    background: linear-gradient(135deg, var(--primary), oklch(from var(--primary) calc(l * 0.9) c h));
+    box-shadow: 0 2px 8px oklch(from var(--primary) l c h / 0.3);
+}
+
+.badge-error {
+    background: linear-gradient(135deg, var(--destructive), oklch(from var(--destructive) calc(l * 0.9) c h));
+    box-shadow: 0 2px 8px oklch(from var(--destructive) l c h / 0.3);
+}
+
+.badge-warning {
+    background: linear-gradient(135deg, var(--warning), oklch(from var(--warning) calc(l * 0.9) c h));
+    box-shadow: 0 2px 8px oklch(from var(--warning) l c h / 0.3);
+}
+
+.badge-info {
+    background: linear-gradient(135deg, var(--info), oklch(from var(--info) calc(l * 0.9) c h));
+    box-shadow: 0 2px 8px oklch(from var(--info) l c h / 0.3);
+}
+
+/* Table Row Hover */
+tr:hover {
+    background: oklch(from var(--muted) l c h / 0.5);
+    transform: scale(1.002);
+}
+
+/* Gradient Text for Headings */
+h1,
+h2 {
+    background: linear-gradient(135deg,
+            oklch(0.45 0.25 280),
+            oklch(0.6 0.22 260));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.dark h1,
+.dark h2 {
+    background: linear-gradient(135deg,
+            oklch(0.75 0.25 280),
+            oklch(0.8 0.22 260));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--muted);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg,
+            oklch(0.6 0.2 280),
+            oklch(0.65 0.22 260));
+    border-radius: 5px;
+    border: 2px solid var(--muted);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg,
+            oklch(0.65 0.22 280),
+            oklch(0.7 0.24 260));
+}
+
+/* Page Transitions */
+.page-content {
+    animation: fade-in-up 0.4s ease-out;
+}
+
+/* Modal Backdrop Blur */
+[role="dialog"]::backdrop {
+    backdrop-filter: blur(8px);
+    background: oklch(from var(--background) l c h / 0.8);
+}
