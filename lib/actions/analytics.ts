@@ -38,9 +38,48 @@ export async function getDashboardStats() {
     activeUsers: activeUsersResult.count || 0,
     totalMessages,
     todayMessages: todayMessagesResult.count || 0,
-    failedMessages,
+    failedQueries: failedMessages,
     successRate: `${successRate}%`,
   }
+}
+
+export async function getUserGrowth() {
+  const supabase = await createClient()
+
+  // Get users from last 6 months
+  const sixMonthsAgo = new Date()
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("created_at")
+    .gte("created_at", sixMonthsAgo.toISOString())
+
+  if (error) throw error
+
+  // Group by month
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  const counts: Record<string, number> = {}
+
+  data.forEach((user) => {
+    const date = new Date(user.created_at)
+    const month = monthNames[date.getMonth()]
+    counts[month] = (counts[month] || 0) + 1
+  })
+
+  // Get last 6 months in order
+  const result = []
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date()
+    d.setMonth(d.getMonth() - i)
+    const month = monthNames[d.getMonth()]
+    result.push({
+      month,
+      users: counts[month] || 0
+    })
+  }
+
+  return result
 }
 
 export async function getIntentDistribution() {

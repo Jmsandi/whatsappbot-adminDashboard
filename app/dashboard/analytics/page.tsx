@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/neo-select"
 import { StatsCard } from "@/components/dashboard/stats-card"
 import { ChartContainer } from "@/components/ui/chart-container"
-import { Users, MessageSquare, TrendingUp, AlertCircle, Download, Calendar, Clock, Zap } from "lucide-react"
+import { Users, MessageSquare, TrendingUp, AlertCircle, Download, Calendar, Clock, Zap, Loader2 } from "lucide-react"
 import {
   AreaChart,
   Area,
@@ -29,54 +29,66 @@ import {
   Pie,
   Cell,
 } from "recharts"
-
-const dailyMessages = [
-  { date: "Jan 1", messages: 2400, failed: 45 },
-  { date: "Jan 2", messages: 1398, failed: 32 },
-  { date: "Jan 3", messages: 9800, failed: 120 },
-  { date: "Jan 4", messages: 3908, failed: 65 },
-  { date: "Jan 5", messages: 4800, failed: 78 },
-  { date: "Jan 6", messages: 3800, failed: 52 },
-  { date: "Jan 7", messages: 4300, failed: 61 },
-  { date: "Jan 8", messages: 5200, failed: 89 },
-  { date: "Jan 9", messages: 6100, failed: 95 },
-  { date: "Jan 10", messages: 7200, failed: 110 },
-  { date: "Jan 11", messages: 6800, failed: 102 },
-  { date: "Jan 12", messages: 5900, failed: 88 },
-  { date: "Jan 13", messages: 7500, failed: 115 },
-  { date: "Jan 14", messages: 8200, failed: 125 },
-]
-
-const userGrowth = [
-  { month: "Jul", users: 4000 },
-  { month: "Aug", users: 5200 },
-  { month: "Sep", users: 6800 },
-  { month: "Oct", users: 8100 },
-  { month: "Nov", users: 9800 },
-  { month: "Dec", users: 12847 },
-]
-
-const intentDistribution = [
-  { name: "Greeting", value: 25, color: "var(--foreground)" },
-  { name: "FAQ", value: 22, color: "var(--chart-2)" },
-  { name: "Support", value: 20, color: "var(--chart-3)" },
-  { name: "Order", value: 18, color: "var(--chart-4)" },
-  { name: "Other", value: 15, color: "var(--chart-5)" },
-]
-
-const hourlyActivity = Array.from({ length: 24 }, (_, i) => ({
-  hour: `${i}:00`,
-  activity: Math.floor(Math.random() * 100) + 20,
-}))
-
-const responseMetrics = [
-  { metric: "Avg Response Time", value: "1.2s", change: -15, icon: Clock },
-  { metric: "Success Rate", value: "98.7%", change: 2.3, icon: TrendingUp },
-  { metric: "Auto-Resolved", value: "87%", change: 5.1, icon: Zap },
-  { metric: "Escalated", value: "156", change: -8, icon: AlertCircle },
-]
+import { getDashboardStats, getIntentDistribution, getMessageTrend, getPeakHours, getUserGrowth } from "@/lib/actions/analytics"
+import useSWR from "swr"
 
 export default function AnalyticsPage() {
+  const { data: stats, isLoading: statsLoading } = useSWR(
+    "dashboardStats",
+    getDashboardStats,
+    {
+      refreshInterval: 10000,
+      revalidateOnFocus: true,
+    }
+  )
+
+  const { data: intentData = [], isLoading: intentLoading } = useSWR(
+    "intentDistribution",
+    () => getIntentDistribution().then(data => data.map(item => ({
+      name: item.intent,
+      value: item.count,
+      color: `var(--chart-${(data.indexOf(item) % 5) + 1})`
+    }))),
+    {
+      refreshInterval: 30000,
+      revalidateOnFocus: true,
+    }
+  )
+
+  const { data: messageTrend = [], isLoading: trendLoading } = useSWR(
+    "messageTrend",
+    () => getMessageTrend(14),
+    {
+      refreshInterval: 30000,
+      revalidateOnFocus: true,
+    }
+  )
+
+  const { data: growthData = [], isLoading: growthLoading } = useSWR(
+    "userGrowth",
+    getUserGrowth,
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: true,
+    }
+  )
+
+  const { data: peakHours = [], isLoading: peakHoursLoading } = useSWR(
+    "peakHours",
+    getPeakHours,
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: true,
+    }
+  )
+
+  const responseMetrics = [
+    { metric: "Avg Response Time", value: "1.2s", change: -15, icon: Clock },
+    { metric: "Success Rate", value: stats?.successRate ?? "0%", change: 2.3, icon: TrendingUp },
+    { metric: "Auto-Resolved", value: "87%", change: 5.1, icon: Zap },
+    { metric: "Escalated", value: "156", change: -8, icon: AlertCircle },
+  ]
+
   return (
     <div className="p-6 lg:p-8 space-y-8">
       {/* Header */}
@@ -107,16 +119,31 @@ export default function AnalyticsPage() {
 
       {/* Main Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatsCard title="Total Users" value="12,847" icon={Users} trend={{ value: 12, isPositive: true }} />
+        <StatsCard
+          title="Total Users"
+          value={statsLoading ? "..." : (stats?.totalUsers?.toLocaleString() ?? "0")}
+          icon={Users}
+          trend={{ value: 12, isPositive: true }}
+        />
         <StatsCard
           title="Active Users"
-          value="2,847"
+          value={statsLoading ? "..." : (stats?.activeUsers?.toLocaleString() ?? "0")}
           icon={Users}
-          description="Last 24 hours"
+          description="Total active status users"
           trend={{ value: 8, isPositive: true }}
         />
-        <StatsCard title="Total Messages" value="1.2M" icon={MessageSquare} trend={{ value: 15, isPositive: true }} />
-        <StatsCard title="Failed Queries" value="2,341" icon={AlertCircle} trend={{ value: 5, isPositive: false }} />
+        <StatsCard
+          title="Total Messages"
+          value={statsLoading ? "..." : (stats?.totalMessages?.toLocaleString() ?? "0")}
+          icon={MessageSquare}
+          trend={{ value: 15, isPositive: true }}
+        />
+        <StatsCard
+          title="Failed Queries"
+          value={statsLoading ? "..." : (stats?.failedQueries?.toLocaleString() ?? "0")}
+          icon={AlertCircle}
+          trend={{ value: 5, isPositive: false }}
+        />
       </div>
 
       {/* Response Metrics */}
@@ -154,43 +181,40 @@ export default function AnalyticsPage() {
           </NeoCardHeader>
           <NeoCardContent>
             <ChartContainer height={350}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={dailyMessages}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={12} fontWeight={600} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={12} fontWeight={600} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--card)",
-                      border: "4px solid var(--foreground)",
-                      borderRadius: "1rem",
-                      fontWeight: 600,
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="messages"
-                    stroke="var(--foreground)"
-                    strokeWidth={3}
-                    fill="var(--muted)"
-                    name="Total Messages"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="failed"
-                    stroke="var(--destructive)"
-                    strokeWidth={2}
-                    fill="var(--destructive)"
-                    fillOpacity={0.2}
-                    name="Failed"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              {trendLoading ? (
+                <div className="h-full flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={messageTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="day" stroke="var(--muted-foreground)" fontSize={12} fontWeight={600} />
+                    <YAxis stroke="var(--muted-foreground)" fontSize={12} fontWeight={600} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "var(--card)",
+                        border: "4px solid var(--foreground)",
+                        borderRadius: "1rem",
+                        fontWeight: 600,
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="messages"
+                      stroke="var(--foreground)"
+                      strokeWidth={3}
+                      fill="var(--muted)"
+                      name="Total Messages"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </ChartContainer>
           </NeoCardContent>
         </NeoCard>
 
-        {/* User Growth */}
+        {/* User Growth (Restored original LineChart) */}
         <NeoCard>
           <NeoCardHeader>
             <NeoCardTitle>User Growth</NeoCardTitle>
@@ -198,28 +222,34 @@ export default function AnalyticsPage() {
           </NeoCardHeader>
           <NeoCardContent>
             <ChartContainer height={300}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={userGrowth}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} fontWeight={600} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={12} fontWeight={600} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--card)",
-                      border: "4px solid var(--foreground)",
-                      borderRadius: "1rem",
-                      fontWeight: 600,
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="users"
-                    stroke="var(--foreground)"
-                    strokeWidth={3}
-                    dot={{ fill: "var(--foreground)", strokeWidth: 2, r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {growthLoading ? (
+                <div className="h-full flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={growthData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} fontWeight={600} />
+                    <YAxis stroke="var(--muted-foreground)" fontSize={12} fontWeight={600} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "var(--card)",
+                        border: "4px solid var(--foreground)",
+                        borderRadius: "1rem",
+                        fontWeight: 600,
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="users"
+                      stroke="var(--foreground)"
+                      strokeWidth={3}
+                      dot={{ fill: "var(--foreground)", strokeWidth: 2, r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </ChartContainer>
           </NeoCardContent>
         </NeoCard>
@@ -232,77 +262,89 @@ export default function AnalyticsPage() {
           </NeoCardHeader>
           <NeoCardContent>
             <ChartContainer height={300} className="flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={intentDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
-                    dataKey="value"
-                    strokeWidth={3}
-                    stroke="var(--background)"
-                  >
-                    {intentDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--card)",
-                      border: "4px solid var(--foreground)",
-                      borderRadius: "1rem",
-                      fontWeight: 600,
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              {intentLoading ? (
+                <div className="h-full flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={intentData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                      strokeWidth={3}
+                      stroke="var(--background)"
+                    >
+                      {intentData.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "var(--card)",
+                        border: "4px solid var(--foreground)",
+                        borderRadius: "1rem",
+                        fontWeight: 600,
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </ChartContainer>
             <div className="grid grid-cols-2 gap-2 mt-4">
-              {intentDistribution.map((item) => (
+              {intentData.map((item: any) => (
                 <div key={item.name} className="flex items-center gap-2">
                   <div
                     className="w-3 h-3 rounded-full border-2 border-foreground"
                     style={{ backgroundColor: item.color }}
                   />
                   <span className="text-sm font-medium">{item.name}</span>
-                  <span className="text-sm text-muted-foreground ml-auto">{item.value}%</span>
+                  <span className="text-sm text-muted-foreground ml-auto">{item.value}</span>
                 </div>
               ))}
             </div>
           </NeoCardContent>
         </NeoCard>
-      </div>
 
-      {/* Hourly Activity */}
-      <NeoCard>
-        <NeoCardHeader>
-          <NeoCardTitle>Hourly Activity</NeoCardTitle>
-          <NeoCardDescription>Message distribution throughout the day</NeoCardDescription>
-        </NeoCardHeader>
-        <NeoCardContent>
-          <ChartContainer height={200}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={hourlyActivity}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="hour" stroke="var(--muted-foreground)" fontSize={10} fontWeight={600} interval={2} />
-                <YAxis stroke="var(--muted-foreground)" fontSize={12} fontWeight={600} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--card)",
-                    border: "4px solid var(--foreground)",
-                    borderRadius: "1rem",
-                    fontWeight: 600,
-                  }}
-                />
-                <Bar dataKey="activity" fill="var(--foreground)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </NeoCardContent>
-      </NeoCard>
+        {/* Hourly Activity (Restored to bottom as full-width BarChart) */}
+        <NeoCard className="lg:col-span-2">
+          <NeoCardHeader>
+            <NeoCardTitle>Hourly Activity</NeoCardTitle>
+            <NeoCardDescription>Message distribution throughout the day</NeoCardDescription>
+          </NeoCardHeader>
+          <NeoCardContent>
+            <ChartContainer height={200}>
+              {peakHoursLoading ? (
+                <div className="h-full flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={peakHours}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="hour" stroke="var(--muted-foreground)" fontSize={10} fontWeight={600} interval={2} />
+                    <YAxis stroke="var(--muted-foreground)" fontSize={12} fontWeight={600} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "var(--card)",
+                        border: "4px solid var(--foreground)",
+                        borderRadius: "1rem",
+                        fontWeight: 600,
+                      }}
+                    />
+                    <Bar dataKey="activity" fill="var(--foreground)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartContainer>
+          </NeoCardContent>
+        </NeoCard>
+      </div>
     </div>
   )
 }
