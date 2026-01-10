@@ -1,34 +1,30 @@
-# WhatsApp Bot Admin Dashboard
+# 🏥 Kai Health: Admin Command Center
 
-A comprehensive management interface for the Geneline WhatsApp bridge, built with Next.js 16 and Supabase. This dashboard empowers administrators to monitor bot performance, manage escalations, and configure AI behavior in real-time.
+A high-performance, premium management interface for the Kai WhatsApp Health Bridge. Built with **Next.js 16**, **Tailwind CSS 4**, and **Supabase**, this dashboard provides real-time epidemiological intelligence and emergency escalation management for Sierra Leone's public health network.
 
-## Features
+**Live Deployment:** [https://admin-dashboard-omega-jade-64.vercel.app/](https://admin-dashboard-omega-jade-64.vercel.app/)
 
-### 📊 Real-time Analytics
-- **Dashboard Overview**: Visualize key metrics including user engagement, message volume, and active sessions.
-- **Bot Performance**: Monitor response times and intent accuracy.
+### � Critical Escalation Pipeline
+- **Live Alert Queue**: Instant notifications for high-risk symptoms (Meningitis, Severe Malaria, etc.) detected by Kai.
+- **Clinician Takeover**: Direct interface for health workers to respond to patients via the bot.
+- **Audit Trails**: Full conversation summaries with AI thought-process logging.
 
-### 👥 User & Interaction Management
-- **Message Logs**: View complete conversation histories with advanced filtering capabilities.
-- **Escalation Management**: Streamlined interface for handling cases that require human intervention.
-- **Contacts & Users**: Manage the user database and WhatsApp contact details.
+### 📊 Real-time Epidemiological Intelligence
+- **Symptom Clustering**: Visualize disease outbreaks across districts in real-time.
+- **Engagement Metrics**: Track user retention, message volume, and intent accuracy.
+- **Interactive Data**: Beautifully rendered charts using Recharts with 10-second live refreshes.
 
-### 🤖 Bot Configuration
-- **Bot Settings**: Configure system prompts, AI model parameters, and behavioral guidelines.
-- **Health Topics**: Manage the knowledge base and intended topics for the health bot.
-- **Training Data**: Tools for ingesting and managing data used to train the AI.
+### 🎨 Premium Design System
+- **Glassmorphism UI**: Modern frosted glass aesthetics with smooth purple/blue gradients.
+- **Responsive Dark Mode**: Fully adaptive themes with glowing accent effects.
+- **Micro-animations**: GPU-accelerated hover effects, pulse notifications, and smooth transitions.
 
-### 📢 Communication Tools
-- **Broadcast System**: Send targeted mass messages to user segments.
-
-## Tech Stack
-
-- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
-- **UI Components**: [Shadcn/ui](https://ui.shadcn.com/), [Radix UI](https://www.radix-ui.com/)
-- **Database & Auth**: [Supabase](https://supabase.com/)
-- **Visualization**: [Recharts](https://recharts.org/)
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router & React 19)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) (Modern CSS Configuration)
+- **Database/Auth**: [Supabase](https://supabase.com/) (Real-time Subscriptions)
+- **UI Components**: [Shadcn/ui](https://ui.shadcn.com/) + [Radix UI](https://www.radix-ui.com/)
+- **Visuals**: [Lucide React](https://lucide.dev/) + [Recharts](https://recharts.org/)
+- **State/Fetching**: [SWR](https://swr.vercel.app/) (Stale-While-Revalidate)
 
 ## Getting Started
 
@@ -74,5 +70,6 @@ A comprehensive management interface for the Geneline WhatsApp bridge, built wit
 - `scripts`: Database migration and seed scripts.
 
 ## License
+GNU
 
 This project is private and proprietary.
