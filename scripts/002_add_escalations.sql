@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS escalations (
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   message_id UUID REFERENCES messages(id) ON DELETE CASCADE,
   reason TEXT NOT NULL,
+  conversation_summary TEXT,
+  trigger_message TEXT,
   trigger_type VARCHAR(50) NOT NULL CHECK (trigger_type IN ('keyword', 'low_confidence', 'user_request', 'safety', 'failed_intent', 'manual')),
   status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'assigned', 'in_progress', 'resolved', 'closed')),
   priority VARCHAR(20) DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent')),
@@ -19,6 +21,10 @@ CREATE TABLE IF NOT EXISTS escalations (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Ensure columns exist if table was already created
+ALTER TABLE escalations ADD COLUMN IF NOT EXISTS conversation_summary TEXT;
+ALTER TABLE escalations ADD COLUMN IF NOT EXISTS trigger_message TEXT;
 
 -- =============================================
 -- Add escalation fields to messages table
@@ -46,9 +52,16 @@ CREATE INDEX IF NOT EXISTS idx_messages_is_escalated ON messages(is_escalated);
 -- =============================================
 ALTER TABLE escalations ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins can view all escalations" ON escalations;
 CREATE POLICY "Admins can view all escalations" ON escalations FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Admins can insert escalations" ON escalations;
 CREATE POLICY "Admins can insert escalations" ON escalations FOR INSERT TO authenticated WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admins can update escalations" ON escalations;
 CREATE POLICY "Admins can update escalations" ON escalations FOR UPDATE TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Admins can delete escalations" ON escalations;
 CREATE POLICY "Admins can delete escalations" ON escalations FOR DELETE TO authenticated USING (true);
 
 -- =============================================

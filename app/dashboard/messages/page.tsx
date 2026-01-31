@@ -34,7 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { getMessages, getMessageStats } from "@/lib/actions/messages"
+import { getMessages, getMessageStats, getUniqueIntents } from "@/lib/actions/messages"
 import type { Message } from "@/lib/supabase/types"
 
 const statusConfig: Record<
@@ -57,20 +57,32 @@ export default function MessagesPage() {
   const [selectedMessage, setSelectedMessage] = React.useState<MessageWithUser | null>(null)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [statusFilter, setStatusFilter] = React.useState("all")
+  const [intentFilter, setIntentFilter] = React.useState("all")
+  const [page, setPage] = React.useState(1)
   const [isLiveMode, setIsLiveMode] = React.useState(false)
+  const LIMIT = 50
+
+  // Fetch unique intents for filter
+  const { data: intents = [] } = useSWR('unique-intents', getUniqueIntents)
 
   // Fetch messages from database
-  const { data: messages = [], error: messagesError, mutate: refreshMessages } = useSWR<MessageWithUser[]>(
-    ['messages', searchQuery, statusFilter],
+  const { data: messagesData, error: messagesError, mutate: refreshMessages, isLoading: messagesLoading } = useSWR(
+    ['messages', searchQuery, statusFilter, intentFilter, page],
     () => getMessages({
       search: searchQuery || undefined,
-      limit: 100
+      intent: intentFilter,
+      page: page,
+      limit: LIMIT
     }),
     {
       refreshInterval: isLiveMode ? 5000 : 0, // Auto-refresh every 5s in live mode
       revalidateOnFocus: true,
     }
   )
+
+  const messages = messagesData?.data || []
+  const totalCount = messagesData?.count || 0
+  const totalPages = Math.ceil(totalCount / LIMIT)
 
   // Fetch stats from database
   const { data: stats, mutate: refreshStats } = useSWR(
@@ -200,15 +212,28 @@ export default function MessagesPage() {
             className="pl-10"
           />
         </div>
-        <NeoSelect value={statusFilter} onValueChange={setStatusFilter}>
-          <NeoSelectTrigger className="w-full sm:w-[180px]">
+        <NeoSelect value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setPage(1); }}>
+          <NeoSelectTrigger className="w-full sm:w-[150px]">
             <Filter className="h-4 w-4 mr-2" />
-            <NeoSelectValue placeholder="Filter by status" />
+            <NeoSelectValue placeholder="Status" />
           </NeoSelectTrigger>
           <NeoSelectContent>
-            <NeoSelectItem value="all">All Messages</NeoSelectItem>
+            <NeoSelectItem value="all">All Status</NeoSelectItem>
             <NeoSelectItem value="handled">Handled</NeoSelectItem>
             <NeoSelectItem value="pending">Pending</NeoSelectItem>
+          </NeoSelectContent>
+        </NeoSelect>
+
+        <NeoSelect value={intentFilter} onValueChange={(val) => { setIntentFilter(val); setPage(1); }}>
+          <NeoSelectTrigger className="w-full sm:w-[150px]">
+            <FileText className="h-4 w-4 mr-2" />
+            <NeoSelectValue placeholder="Intent" />
+          </NeoSelectTrigger>
+          <NeoSelectContent>
+            <NeoSelectItem value="all">All Intents</NeoSelectItem>
+            {intents.map(intent => (
+              <NeoSelectItem key={intent} value={intent}>{intent}</NeoSelectItem>
+            ))}
           </NeoSelectContent>
         </NeoSelect>
       </div>
@@ -311,6 +336,56 @@ export default function MessagesPage() {
                 </tbody>
               </table>
             </div>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 border-t border-border pt-6">
+                <p className="text-sm text-muted-foreground">
+                  Showing <span className="font-medium">{(page - 1) * LIMIT + 1}</span> to <span className="font-medium">{Math.min(page * LIMIT, totalCount)}</span> of <span className="font-medium">{totalCount}</span> messages
+                </p>
+                <div className="flex items-center gap-2">
+                  <NeoButton
+                    variant="outline"
+                    size="sm"
+                    disabled={page === 1 || messagesLoading}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </NeoButton>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      // Simple pagination logic for showing few pages around current
+                      let pageNum = page
+                      if (totalPages <= 5) pageNum = i + 1
+                      else {
+                        if (page <= 3) pageNum = i + 1
+                        else if (page >= totalPages - 2) pageNum = totalPages - 4 + i
+                        else pageNum = page - 2 + i
+                      }
+
+                      return (
+                        <NeoButton
+                          key={pageNum}
+                          variant={page === pageNum ? "default" : "outline"}
+                          size="sm"
+                          className="w-8 h-8 p-0"
+                          onClick={() => setPage(pageNum)}
+                        >
+                          {pageNum}
+                        </NeoButton>
+                      )
+                    })}
+                  </div>
+                  <NeoButton
+                    variant="outline"
+                    size="sm"
+                    disabled={page === totalPages || messagesLoading}
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  >
+                    Next
+                  </NeoButton>
+                </div>
+              </div>
+            )}
           </NeoCardContent>
         </NeoCard>
       )}
@@ -332,8 +407,8 @@ export default function MessagesPage() {
               >
                 <div
                   className={`max-w-[70%] rounded-lg p-3 ${msg.sender === 'user'
-                      ? 'bg-muted text-foreground'
-                      : 'bg-primary text-primary-foreground'
+                    ? 'bg-muted text-foreground'
+                    : 'bg-primary text-primary-foreground'
                     }`}
                 >
                   <div className="text-xs opacity-70 mb-1">

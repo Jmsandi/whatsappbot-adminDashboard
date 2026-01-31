@@ -18,10 +18,6 @@ export async function getEscalations(filters?: {
         id,
         name,
         phone
-      ),
-      messages (
-        content,
-        created_at
       )
     `)
         .order("created_at", { ascending: false })
@@ -40,7 +36,12 @@ export async function getEscalations(filters?: {
 
     const { data, error } = await query
 
-    if (error) throw error
+    if (error) {
+        console.error("DEBUG: Error fetching escalations:", error)
+        throw error
+    }
+
+    console.log(`DEBUG: Fetched ${data?.length || 0} escalations with filter:`, filters)
     return data
 }
 

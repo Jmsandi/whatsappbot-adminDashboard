@@ -10,15 +10,25 @@ export async function getMessages(filters?: {
   search?: string
   startDate?: string
   endDate?: string
+  page?: number
   limit?: number
 }) {
   const supabase = await createClient()
-  let query = supabase.from("messages").select("*, users(name, phone)").order("created_at", { ascending: false })
+  const page = filters?.page || 1
+  const limit = filters?.limit || 50
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+
+  let query = supabase
+    .from("messages")
+    .select("*, users(name, phone)", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to)
 
   if (filters?.userId) {
     query = query.eq("user_id", filters.userId)
   }
-  if (filters?.intent) {
+  if (filters?.intent && filters.intent !== "all") {
     query = query.eq("intent", filters.intent)
   }
   if (filters?.search) {
@@ -30,13 +40,21 @@ export async function getMessages(filters?: {
   if (filters?.endDate) {
     query = query.lte("created_at", filters.endDate)
   }
-  if (filters?.limit) {
-    query = query.limit(filters.limit)
-  }
 
-  const { data, error } = await query
+  const { data, error, count } = await query
   if (error) throw error
-  return data
+  return { data, count }
+}
+
+export async function getUniqueIntents() {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("intents")
+    .select("name")
+    .order("name", { ascending: true })
+
+  if (error) throw error
+  return data.map(i => i.name)
 }
 
 export async function getMessagesByUser(userId: string) {

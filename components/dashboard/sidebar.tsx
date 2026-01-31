@@ -22,8 +22,12 @@ import {
   MessageCircle,
   AlertTriangle,
   Heart,
+  LogOut,
 } from "lucide-react"
 import { useTheme } from "next-themes"
+import { signOut } from "@/lib/actions/auth"
+
+// ... (navItems remains same)
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: BarChart3 },
@@ -108,8 +112,8 @@ export function Sidebar() {
             })}
           </nav>
 
-          {/* Theme toggle */}
-          <div className="p-4 border-t-4 border-foreground">
+          {/* Bottom Actions */}
+          <div className="p-4 border-t-4 border-foreground space-y-3">
             {mounted && (
               <NeoButton
                 variant="outline"
@@ -120,6 +124,14 @@ export function Sidebar() {
                 {theme === "dark" ? "Light Mode" : "Dark Mode"}
               </NeoButton>
             )}
+            <NeoButton
+              variant="destructive"
+              className="w-full neo-shadow-sm active:neo-shadow-none active:translate-x-1 active:translate-y-1"
+              onClick={() => signOut()}
+            >
+              <LogOut className="h-5 w-5 mr-2" />
+              Logout
+            </NeoButton>
           </div>
         </div>
       </aside>

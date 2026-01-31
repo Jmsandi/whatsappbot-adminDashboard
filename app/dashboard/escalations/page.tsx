@@ -63,7 +63,7 @@ const statusConfig = {
 }
 
 export default function EscalationsPage() {
-    const [statusFilter, setStatusFilter] = React.useState("pending")
+    const [statusFilter, setStatusFilter] = React.useState("all")
     const [priorityFilter, setPriorityFilter] = React.useState("all")
     const [selectedEscalation, setSelectedEscalation] = React.useState<any>(null)
     const [showDetailsDialog, setShowDetailsDialog] = React.useState(false)
@@ -72,7 +72,7 @@ export default function EscalationsPage() {
     const [adminResponse, setAdminResponse] = React.useState("")
     const [adminNotes, setAdminNotes] = React.useState("")
 
-    const { data: escalations = [], isLoading: escalationsLoading } = useSWR(
+    const { data: escalations = [], isLoading: escalationsLoading, error: escalationsError } = useSWR(
         ["escalations", statusFilter, priorityFilter],
         () => getEscalations({ status: statusFilter, priority: priorityFilter !== "all" ? priorityFilter : undefined }),
         {
@@ -96,33 +96,6 @@ export default function EscalationsPage() {
             setConversation(messages)
         } catch (error) {
             console.error("Failed to load conversation:", error)
-        }
-    }
-
-    const handleAssign = async () => {
-        if (!selectedEscalation) return
-        setIsLoading(true)
-        try {
-            await assignEscalation(selectedEscalation.id, "Current Admin")
-            mutate(["escalations", statusFilter, priorityFilter])
-            mutate("escalationStats")
-        } catch (error) {
-            console.error("Failed to assign escalation:", error)
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const handleSaveNotes = async () => {
-        if (!selectedEscalation) return
-        setIsLoading(true)
-        try {
-            await addEscalationNote(selectedEscalation.id, adminNotes)
-            mutate(["escalations", statusFilter, priorityFilter])
-        } catch (error) {
-            console.error("Failed to save notes:", error)
-        } finally {
-            setIsLoading(false)
         }
     }
 
@@ -254,6 +227,15 @@ export default function EscalationsPage() {
                             <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
                             <p className="text-muted-foreground mt-2">Loading escalations...</p>
                         </div>
+                    ) : escalationsError ? (
+                        <div className="text-center py-12">
+                            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive opacity-50" />
+                            <h3 className="text-lg font-semibold mb-2">Error loading escalations</h3>
+                            <p className="text-muted-foreground">{escalationsError.message || "Please check your connection and try again."}</p>
+                            <NeoButton variant="outline" className="mt-4" onClick={() => mutate(["escalations", statusFilter, priorityFilter])}>
+                                Retry
+                            </NeoButton>
+                        </div>
                     ) : escalations.length === 0 ? (
                         <div className="text-center py-12">
                             <CheckCircle className="h-12 w-12 mx-auto mb-4 text-success opacity-50" />
@@ -325,110 +307,87 @@ export default function EscalationsPage() {
 
                     {selectedEscalation && (
                         <div className="space-y-6 py-4">
-                            {/* Info */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label>Priority</Label>
-                                    <NeoBadge variant={priorityConfig[(selectedEscalation.priority || 'normal') as keyof typeof priorityConfig]?.variant || "default"} className="mt-1">
-                                        {selectedEscalation.priority}
-                                    </NeoBadge>
+                            {/* Health Worker Notification */}
+                            <div className="p-4 bg-primary/5 rounded-xl border-2 border-primary/20">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="p-2 bg-primary/10 rounded-lg">
+                                        <Send className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <Label className="text-base font-bold">Health Worker Notification</Label>
                                 </div>
-                                <div>
-                                    <Label>Status</Label>
-                                    <NeoBadge variant={statusConfig[(selectedEscalation.status || 'pending') as keyof typeof statusConfig]?.variant || "default"} className="mt-1">
-                                        {statusConfig[(selectedEscalation.status || 'pending') as keyof typeof statusConfig]?.label || selectedEscalation.status}
-                                    </NeoBadge>
-                                </div>
-                                <div>
-                                    <Label>Trigger</Label>
-                                    <p className="text-sm mt-1">{selectedEscalation.trigger_type}</p>
-                                </div>
-                                <div>
-                                    <Label>Created</Label>
-                                    <p className="text-sm mt-1">{formatDate(selectedEscalation.created_at)}</p>
-                                </div>
-                            </div>
-
-                            {/* Reason */}
-                            <div>
-                                <Label>Reason</Label>
-                                <p className="text-sm mt-1 p-3 bg-muted rounded-lg">{selectedEscalation.reason}</p>
-                            </div>
-
-                            {/* Conversation */}
-                            <div>
-                                <Label>Conversation History</Label>
-                                <div className="mt-2 space-y-2 max-h-[300px] overflow-y-auto border rounded-lg p-4">
-                                    {conversation.map((msg) => (
-                                        <div
-                                            key={msg.id}
-                                            className={`p-3 rounded-lg ${msg.sender === "user" ? "bg-muted ml-0 mr-12" : "bg-primary/10 ml-12 mr-0"
-                                                }`}
-                                        >
-                                            <p className="text-xs font-bold mb-1">{msg.sender === "user" ? "User" : "Bot"}</p>
-                                            <p className="text-sm">{msg.content}</p>
-                                            <p className="text-xs text-muted-foreground mt-1">{formatDate(msg.created_at)}</p>
+                                <div className="space-y-2">
+                                    <div className="text-sm">
+                                        <span className="font-bold text-muted-foreground">Status: </span>
+                                        <NeoBadge variant="success" className="ml-1">Forwarded</NeoBadge>
+                                    </div>
+                                    <div className="text-sm">
+                                        <span className="font-bold text-muted-foreground">Sent To: </span>
+                                        {selectedEscalation.admin_notes?.replace('Forwarded to health workers: ', '') || 'System Distribution List'}
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-primary/10">
+                                        <p className="text-xs font-bold text-primary mb-2 uppercase tracking-wider text-muted-foreground">Report Preview</p>
+                                        <div className="bg-background/80 p-3 rounded-lg border border-primary/5 font-mono text-xs whitespace-pre-wrap">
+                                            {`🚨 EMERGENCY REPORT\n\n👤 User: ${selectedEscalation.users?.name || 'Unknown User'}\n📱 Phone: ${selectedEscalation.users?.phone || 'Unknown'}\n🕐 Time: ${formatDate(selectedEscalation.created_at)}\n\n📝 REASON:\n${selectedEscalation.reason}\n\n💬 CONVERSATION SUMMARY:\n${selectedEscalation.conversation_summary || 'No summary available.'}\n\n⚠️ LATEST MESSAGE:\n"${selectedEscalation.trigger_message || selectedEscalation.messages?.content || 'No message context'}"`}
                                         </div>
-                                    ))}
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Admin Notes */}
-                            <div>
-                                <Label>Admin Notes</Label>
-                                <Textarea
-                                    value={adminNotes}
-                                    onChange={(e) => setAdminNotes(e.target.value)}
-                                    placeholder="Add internal notes..."
-                                    className="mt-2"
-                                    rows={3}
-                                />
-                                <NeoButton size="sm" onClick={handleSaveNotes} disabled={isLoading} className="mt-2">
-                                    Save Notes
-                                </NeoButton>
-                            </div>
+                            {/* User details & Summary */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-muted/40 rounded-xl border border-border">
+                                        <Label className="text-muted-foreground font-bold mb-2 block">User Contact</Label>
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-background rounded-lg border border-border">
+                                                <User className="h-4 w-4 text-muted-foreground" />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-primary">{selectedEscalation.users?.name || 'Anonymous User'}</p>
+                                                <p className="text-sm font-mono text-muted-foreground">{selectedEscalation.users?.phone}</p>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                            {/* Response */}
-                            {selectedEscalation.status !== "resolved" && (
-                                <div>
-                                    <Label>Send Response to User</Label>
-                                    <Textarea
-                                        value={adminResponse}
-                                        onChange={(e) => setAdminResponse(e.target.value)}
-                                        placeholder="Type your response to send via WhatsApp..."
-                                        className="mt-2"
-                                        rows={4}
-                                    />
+                                    <div className="p-4 bg-muted/40 rounded-xl border border-border">
+                                        <Label className="text-muted-foreground font-bold mb-2 block">Trigger Message</Label>
+                                        <div className="p-3 bg-background rounded-lg border border-border italic text-sm text-primary">
+                                            "{selectedEscalation.trigger_message || selectedEscalation.messages?.content || 'No trigger message stored'}"
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
+
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-muted/40 rounded-xl border border-border">
+                                        <Label className="text-muted-foreground font-bold mb-2 block">AI Summary (Reason)</Label>
+                                        <p className="text-sm leading-relaxed text-primary">
+                                            {selectedEscalation.reason}
+                                        </p>
+                                    </div>
+
+                                    <div className="p-4 bg-muted/40 rounded-xl border border-border">
+                                        <Label className="text-muted-foreground font-bold mb-2 block">Conversation Summary</Label>
+                                        <div className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap max-h-[150px] overflow-y-auto">
+                                            {selectedEscalation.conversation_summary || "Full context not available for this legacy record."}
+                                        </div>
+                                        <div className="mt-4 pt-4 border-t border-border/50">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-muted-foreground uppercase">Priority</span>
+                                                <NeoBadge variant={priorityConfig[(selectedEscalation.priority || 'normal') as keyof typeof priorityConfig]?.variant || "default"}>
+                                                    {selectedEscalation.priority}
+                                                </NeoBadge>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
 
                     <DialogFooter>
-                        {selectedEscalation?.status === "pending" && (
-                            <NeoButton variant="outline" onClick={handleAssign} disabled={isLoading}>
-                                <UserCheck className="h-4 w-4 mr-2" />
-                                Assign to Me
-                            </NeoButton>
-                        )}
-                        <NeoButton variant="outline" onClick={() => setShowDetailsDialog(false)}>
-                            Close
+                        <NeoButton variant="default" className="w-full sm:w-auto" onClick={() => setShowDetailsDialog(false)}>
+                            Done
                         </NeoButton>
-                        {selectedEscalation?.status !== "resolved" && (
-                            <NeoButton onClick={handleSendResponse} disabled={isLoading || !adminResponse.trim()}>
-                                {isLoading ? (
-                                    <>
-                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                        Sending...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Send className="h-4 w-4 mr-2" />
-                                        Send and Resolve
-                                    </>
-                                )}
-                            </NeoButton>
-                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
