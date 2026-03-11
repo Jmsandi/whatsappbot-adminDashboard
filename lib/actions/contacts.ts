@@ -17,6 +17,8 @@ export async function createContact(contact: {
   phone: string
   email?: string
   role: ContactRole
+  district?: string | null
+  hospital?: string | null
 }) {
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -26,6 +28,8 @@ export async function createContact(contact: {
       phone: contact.phone,
       email: contact.email || null,
       role: contact.role,
+      district: contact.district || null,
+      hospital: contact.hospital || null,
       status: "active",
     })
     .select()

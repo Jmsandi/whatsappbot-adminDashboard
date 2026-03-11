@@ -34,6 +34,8 @@ export interface SpecialContact {
   email: string | null
   role: ContactRole
   status: "active" | "inactive"
+  district?: string | null
+  hospital?: string | null
   created_at: string
   updated_at: string
 }

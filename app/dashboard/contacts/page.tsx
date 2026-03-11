@@ -24,6 +24,8 @@ import {
   Trash2,
   Loader2,
   AlertTriangle,
+  MapPin,
+  Building2,
 } from "lucide-react"
 import {
   Dialog,
@@ -58,6 +60,8 @@ export default function ContactsPage() {
     phone: "",
     email: "",
     role: "" as ContactRole | "",
+    district: "",
+    hospital: "",
   })
 
   const { data: contacts = [], error, isLoading: contactsLoading } = useSWR("contacts", getContacts)
@@ -99,16 +103,23 @@ export default function ContactsPage() {
         phone: newContact.phone,
         email: newContact.email || undefined,
         role: newContact.role as ContactRole,
+        district: newContact.district || undefined,
+        hospital: newContact.hospital || undefined,
       })
       await createLog({
         action: `Special contact added: ${newContact.name}`,
         action_type: "create",
         admin_name: "Current Admin",
-        details: { name: newContact.name, role: newContact.role },
+        details: { 
+          name: newContact.name, 
+          role: newContact.role,
+          district: newContact.district || null,
+          hospital: newContact.hospital || null
+        },
       })
       mutate("contacts")
       setIsAddDialogOpen(false)
-      setNewContact({ name: "", phone: "", email: "", role: "" })
+      setNewContact({ name: "", phone: "", email: "", role: "", district: "", hospital: "" })
     } catch (error) {
       console.error("Failed to create contact:", error)
     } finally {
@@ -194,6 +205,24 @@ export default function ContactsPage() {
                     type="email"
                     value={newContact.email}
                     onChange={(e) => setNewContact((prev) => ({ ...prev, email: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-bold">District (Optional)</Label>
+                  <NeoInput
+                    placeholder="e.g., Bo, Kenema"
+                    value={newContact.district}
+                    onChange={(e) => setNewContact((prev) => ({ ...prev, district: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-bold">Hospital (Optional)</Label>
+                  <NeoInput
+                    placeholder="e.g., Bo Government Hospital"
+                    value={newContact.hospital}
+                    onChange={(e) => setNewContact((prev) => ({ ...prev, hospital: e.target.value }))}
                   />
                 </div>
               </div>
@@ -305,6 +334,22 @@ export default function ContactsPage() {
                       <div className="flex items-center gap-2 text-sm">
                         <Mail className="h-4 w-4 text-muted-foreground" />
                         <span>{contact.email}</span>
+                      </div>
+                    )}
+                    {(contact.district || contact.hospital) && (
+                      <div className="pt-2 mt-2 border-t-2 border-muted/50">
+                        {contact.hospital && (
+                          <div className="flex items-center gap-2 text-sm mt-1">
+                            <Building2 className="h-4 w-4 text-muted-foreground min-w-[16px]" />
+                            <span className="truncate">{contact.hospital}</span>
+                          </div>
+                        )}
+                        {contact.district && (
+                          <div className="flex items-center gap-2 text-sm mt-1">
+                            <MapPin className="h-4 w-4 text-muted-foreground min-w-[16px]" />
+                            <span>{contact.district} District</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
